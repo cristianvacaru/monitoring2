@@ -893,6 +893,23 @@ def automate_website_login(output_file):
     # Click the "Save" button
     save_button.click()
     time.sleep(50)
+    
+     # Access the second website
+    second_website_url = 'https://apv-monitoring.streamlit.app/'
+    driver.get(second_website_url)
+
+    # Wait for the page to load
+    time.sleep(5)
+
+    # Find the input element and type 'secret'
+    secret_input = driver.find_element(By.XPATH, '//*[@id="root"]/div[1]/div[1]/div/div/div/section/div[1]/div[1]/div/div/div/div[1]/div')
+    secret_input.send_keys('secret')
+
+    # Press Enter after typing 'secret'
+    secret_input.send_keys(Keys.ENTER)
+
+    # Wait for 50 seconds
+    time.sleep(50)
 
 
 
