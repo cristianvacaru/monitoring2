@@ -164,7 +164,7 @@ def make_api_call():
 
 def np_check():
     # Load data from the cache file
-    cache_file = 'response_cache.json'
+    cache_file = 'ignore_folder/response_cache.json'
     with open(cache_file, 'r') as f:
         response_text = f.read()
     data = json.loads(response_text)
@@ -209,54 +209,7 @@ def np_check():
         # Extract points from inside NP polygons
         join_geodf = gpd.sjoin(points_geodf, poly_gdf)
         np_df = pd.DataFrame(join_geodf.drop(columns='geometry'))
-
-        # api_table_name = 'np_data'
-        # c.execute(f'CREATE TABLE IF NOT EXISTS {api_table_name} (nr INTEGER PRIMARY KEY, lat REAL, lng REAL, emiteAvize INTEGER, text TEXT, denumire TEXT, up TEXT, ua TEXT, emitent_denumire TEXT, autorizatie_titular TEXT, ocol TEXT, volumInitial TEXT, stare TEXT, tratament TEXT, naturaProdus TEXT, judet TEXT, date_added TEXT)')
-
-        # for index, row in np_df.iterrows():
-        #     nr = row['nr']
-        #     emiteAvize = row['emiteAvize']
-        #     api_url = f'https://www.inspectorulpadurii.ro/api/apv/{nr}'
-        #     api_response = requests.get(api_url)
-        #     if api_response.status_code == 200:
-        #         api_data = api_response.json()
-        #         if api_data:
-        #             denumire = api_data['denumire']
-        #             up = api_data['up']
-        #             ua = api_data['ua']
-        #             emitent_denumire = api_data['emitent']['denumire']
-        #             autorizatie_titular = api_data['autorizatie']['titular']
-        #             ocol = api_data['ocol']
-        #             volumInitial = api_data['volumInitial']
-        #             stare = api_data['stare']
-        #             tratament = api_data['tratament']
-        #             naturaProdus = api_data['naturaProdus']
-        #             judet = api_data['judet']
-        #             text = row['text']
-        #             date_added = datetime.now().strftime('%Y-%m-%d')
-                    
-        #             # Insert or update individual row
-        #             c.execute(f'''
-        #                 INSERT INTO {api_table_name} (nr, lat, lng, emiteAvize, text, denumire, up, ua, emitent_denumire, autorizatie_titular, ocol, volumInitial, stare, tratament, naturaProdus, judet, date_added)
-        #                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        #                 ON CONFLICT (nr) DO UPDATE SET
-        #                 lat = excluded.lat,
-        #                 lng = excluded.lng,
-        #                 emiteAvize = excluded.emiteAvize,
-        #                 text = excluded.text,
-        #                 denumire = excluded.denumire,
-        #                 up = excluded.up,
-        #                 ua = excluded.ua,
-        #                 emitent_denumire = excluded.emitent_denumire,
-        #                 autorizatie_titular = excluded.autorizatie_titular,
-        #                 ocol = excluded.ocol,
-        #                 volumInitial = excluded.volumInitial,
-        #                 stare = excluded.stare,
-        #                 tratament = excluded.tratament,
-        #                 naturaProdus = excluded.naturaProdus,
-        #                 judet = excluded.judet,
-        #                 date_added = CASE WHEN {api_table_name}.date_added IS NULL THEN excluded.date_added ELSE {api_table_name}.date_added END
-        #             ''', (nr, row['lat'], row['lng'], emiteAvize, text, denumire, up, ua, emitent_denumire, autorizatie_titular, ocol, volumInitial, stare, tratament, naturaProdus, judet, date_added))
+ 
         api_table_name = 'np_data'
         c.execute(f'CREATE TABLE IF NOT EXISTS {api_table_name} (nr INTEGER PRIMARY KEY, lat REAL, lng REAL, emiteAvize INTEGER, text TEXT, denumire TEXT, up TEXT, ua TEXT, emitent_denumire TEXT, autorizatie_titular TEXT, ocol TEXT, volumInitial TEXT, volum REAL, volumRasinoase REAL, exploatari TEXT, prelungiri TEXT, stare TEXT, codStare INTEGER, tratament TEXT, naturaProdus TEXT, judet TEXT, date_added TEXT)')
 
@@ -657,6 +610,9 @@ def commit_and_push_to_github(commit_message):
     try:
         # Stage all changes
         subprocess.run(['git', 'add', '.'])
+
+        # Set skip-worktree for the specific file (ignore_folder/response_cache.json)
+        subprocess.run(['git', 'update-index', '--skip-worktree', 'ignore_folder/response_cache.json'])
 
         # Commit with the given commit_message
         subprocess.run(['git', 'commit', '-m', commit_message])

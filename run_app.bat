@@ -1,2 +1,2 @@
 @echo off
-python "C:\Users\cristian.vacaru\OneDrive - HS Timber Group\Documents\GitHub\monitoring-app\api_call.py"
+python "C:\Users\cristian.vacaru\OneDrive - HS Timber Group\Documents\GitHub\monitoring2\api_call.py"
