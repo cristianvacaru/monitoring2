@@ -538,23 +538,30 @@ def send_unsent_entries_email():
         # List of recipient email addresses
         receiver_emails = ['cristian.vacaru@hs.ro', 'alexandru.bahrin@hs.ro', 'vladut.ciobica@hs.ro', 'adrian.lucan@hs.ro', 'laszlo.jager@hs.at']  # Add more email addresses as needed
 
+        # Prompt to ask if the email should be sent
+        send_email_option = input("Do you want to send the email with the list of unsent entries? (Y/N): ").strip().lower()
 
-        # Send an email with the unsent entries as an HTML table
-        subject = 'NP delivery notes notification'
-        body = f'<html><body><p>Hi, please find the latest National Park delivery notes with possible unloading in HS log yards</p>{email_body}</body></html>'
-        send_email(subject, body, receiver_emails)
+        if send_email_option == 'y':
+            # Send an email with the unsent entries as an HTML table
+            subject = 'NP delivery notes notification'
+            body = f'<html><body><p>Hi, please find the latest National Park delivery notes with possible unloading in HS log yards</p>{email_body}</body></html>'
+            send_email(subject, body, receiver_emails)
 
-        # Mark the sent entries as sent (set sent_status to 1)
-        c.execute("UPDATE codAviz_data SET sent_status = 1 WHERE sent_status = 0")
+            # Mark the sent entries as sent (set sent_status to 1)
+            c.execute("UPDATE codAviz_data SET sent_status = 1 WHERE sent_status = 0")
 
-        # Commit changes and close the connection
-        conn.commit()
-        conn.close()
+            # Commit changes and close the connection
+            conn.commit()
+            conn.close()
 
-        print('Unsent entries sent and marked as sent.')
+            print('Unsent entries sent and marked as sent.')
+        elif send_email_option == 'n':
+            print('Email not sent. Entries remain unsent.')
+        else:
+            print('Invalid option. Email not sent.')
+
     else:
         print('No unsent entries to send.')
-
 
 
 def archive_old_entries():
