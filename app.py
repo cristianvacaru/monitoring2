@@ -262,6 +262,7 @@ if check_password():
 
         # Convert the date from the database to a Python datetime object
         last_date_added = datetime.strptime(last_date_added, '%Y-%m-%d')
+        st.warning('Happy new year!', icon="🌲")
 
         st.metric("Last update date: ", last_date_added.strftime('%B %d, %Y'))
         st.markdown(f'<span style="background-color: red; color: black;">RED</span>: plots that overlap polygons of National Parks.', unsafe_allow_html=True)
