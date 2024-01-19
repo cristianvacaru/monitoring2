@@ -272,7 +272,7 @@ if check_password():
         data = c.fetchall()
 
         # Filtering section:
-        df = pd.read_sql_query("SELECT nr, denumire as DenumireAPV, emitent_denumire as Emitent, autorizatie_titular as TitularAutorizatie, ocol, volumInitial as VolumTotal, volum as VolumRasinoase, judet, stare, tratament, date_added, national_park FROM apv_data WHERE emiteAvize = 1 and volum > 50 ORDER by volum desc", conn)
+        df = pd.read_sql_query("SELECT nr, denumire as DenumireAPV, emitent_denumire as Emitent, autorizatie_titular as TitularAutorizatie, ocol, volumInitial as VolumTotal, volum as VolumRasinoase, judet, stare, tratament, date_added, national_park, lat, lng FROM apv_data WHERE emiteAvize = 1 and volum > 50 ORDER by volum desc", conn)
 
         # Convert 'date_added' column to datetime format
         df['date_added'] = pd.to_datetime(df['date_added'], format='%Y-%m-%d')
