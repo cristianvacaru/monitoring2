@@ -28,6 +28,7 @@ def make_api_call():
     c.execute('CREATE TABLE IF NOT EXISTS temp_table (nr INTEGER PRIMARY KEY, lat REAL, lng REAL, stare TEXT, emiteAvize INTEGER)')
     c.execute('CREATE TABLE IF NOT EXISTS apv_data (nr TEXT PRIMARY KEY, denumire TEXT, emitent_denumire TEXT, autorizatie_titular TEXT, ocol TEXT, volumInitial REAL, volum REAL, stare TEXT, tratament TEXT, naturaProdus TEXT, judet TEXT, emiteAvize INTEGER, national_park INTEGER, lat REAL, lng REAL, date_added TEXT)')
     c.execute('CREATE TABLE IF NOT EXISTS national_parks (nr INTEGER PRIMARY KEY, lat REAL, lng REAL, index_right INTEGER, localId TEXT, CharacterS TEXT, text TEXT, Tip_NP TEXT, Arie REAL, Cod NP)')
+    c.execute('CREATE TABLE IF NOT EXISTS apv_coordinates (id INTEGER PRIMARY KEY AUTOINCREMENT, type TEXT, code TEXT, name TEXT, longitude REAL, latitude REAL, registered_on TEXT, expires_on TEXT, exported INTEGER DEFAULT 0)')
 
     # Check if the response has been cached and is less than 24 hours old
     cache_file = 'ignore_folder/response_cache.json'
@@ -98,9 +99,45 @@ def make_api_call():
 
 
 
+    # # Make a request to the API for each new entry
+    # c.execute('SELECT nr FROM new_entries WHERE specii LIKE "%RASINOASE%" AND emiteAvize = ?', (True,))
+    # result = c.fetchall()
+    # for entry in result:
+    #     nr = entry[0]
+    #     response = requests.get(f'https://www.inspectorulpadurii.ro/api/apv/{nr}')
+    #     data_apv = json.loads(response.text)
+
+    #     # Extract the desired fields from the API response
+    #     denumire = data_apv['denumire']
+    #     emitent_denumire = data_apv['emitent']['denumire']
+    #     autorizatie_titular = data_apv['autorizatie']['titular']
+    #     ocol = data_apv['ocol']
+    #     volumInitial = data_apv['volumInitial']
+    #     volum = data_apv['volumGrupeSpecii']['RĂȘINOASE']
+    #     stare = data_apv['stare']
+    #     tratament = data_apv['tratament']
+    #     naturaProdus = data_apv['naturaProdus']
+    #     judet = data_apv['judet']
+    #     date_added = datetime.now().strftime('%Y-%m-%d')
+        
+
+    #     # Insert the new data into the apv_data table
+    #     c.execute('INSERT INTO apv_data (nr, denumire, emitent_denumire, autorizatie_titular, ocol, volumInitial, volum, stare, tratament, naturaProdus, judet, date_added) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', (nr, denumire, emitent_denumire, autorizatie_titular, ocol, volumInitial, volum,  stare, tratament, naturaProdus, judet, date_added))
+
+    # # Make a request to update emiteAvize in apv_data table based on response_cache.json
+    # with open(cache_file, 'r') as f:
+    #     response_text = f.read()
+    # data_cache = json.loads(response_text)
+    # emiteAvize_values = {item['nr']: item['emiteAvize'] for item in data_cache}
+
+    # for nr, emiteAvize in emiteAvize_values.items():
+    #     c.execute("UPDATE apv_data SET emiteAvize = ? WHERE nr = ?", (emiteAvize, nr))
+    
+    
     # Make a request to the API for each new entry
     c.execute('SELECT nr FROM new_entries WHERE specii LIKE "%RASINOASE%" AND emiteAvize = ?', (True,))
     result = c.fetchall()
+
     for entry in result:
         nr = entry[0]
         response = requests.get(f'https://www.inspectorulpadurii.ro/api/apv/{nr}')
@@ -120,7 +157,21 @@ def make_api_call():
         date_added = datetime.now().strftime('%Y-%m-%d')
 
         # Insert the new data into the apv_data table
-        c.execute('INSERT INTO apv_data (nr, denumire, emitent_denumire, autorizatie_titular, ocol, volumInitial, volum, stare, tratament, naturaProdus, judet, date_added) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', (nr, denumire, emitent_denumire, autorizatie_titular, ocol, volumInitial, volum,  stare, tratament, naturaProdus, judet, date_added))
+        c.execute('INSERT INTO apv_data (nr, denumire, emitent_denumire, autorizatie_titular, ocol, volumInitial, volum, stare, tratament, naturaProdus, judet, date_added) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', 
+                (nr, denumire, emitent_denumire, autorizatie_titular, ocol, volumInitial, volum,  stare, tratament, naturaProdus, judet, date_added))
+
+        # Check and insert unique coordinates into the apv_coordinates table
+        unique_coordinates = set()
+        if volum > 50:
+            for ramp in data_apv['rampePrimare']:
+                coordinate = (ramp['lat'], ramp['lng'])
+                if coordinate not in unique_coordinates:
+                    registered_on = datetime.now().strftime('%Y-%m-%d 00:00:00')
+                    expires_on = (datetime.now() + relativedelta(months=+5)).strftime('%Y-%m-%d 00:00:00')
+
+                    c.execute('INSERT INTO apv_coordinates (type, code, name, longitude, latitude, registered_on, expires_on, exported) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+                            ('APV', '', nr, ramp['lng'], ramp['lat'], registered_on, expires_on, 0))
+                    unique_coordinates.add(coordinate)
 
     # Make a request to update emiteAvize in apv_data table based on response_cache.json
     with open(cache_file, 'r') as f:
@@ -130,6 +181,34 @@ def make_api_call():
 
     for nr, emiteAvize in emiteAvize_values.items():
         c.execute("UPDATE apv_data SET emiteAvize = ? WHERE nr = ?", (emiteAvize, nr))
+    
+    # Export data to Excel
+    export_date = datetime.now().strftime('%y%m%d')
+    timflow_export_file = f'timflow_coord/{export_date}.xlsx'
+
+    c.execute('SELECT type, code, name, longitude, latitude, registered_on, expires_on FROM apv_coordinates')
+    result = c.fetchall()
+
+    # Create DataFrame without specifying dtype initially
+    df = pd.DataFrame(result, columns=['type', 'code', 'name', 'longitude', 'latitude', 'registered_on', 'expires_on'])
+
+    # Convert 'name' column to int, 'longitude' and 'latitude' columns to float
+    df['name'] = pd.to_numeric(df['name'], errors='coerce', downcast='integer')
+    df['longitude'] = pd.to_numeric(df['longitude'], errors='coerce', downcast='float')
+    df['latitude'] = pd.to_numeric(df['latitude'], errors='coerce', downcast='float')
+
+    # Convert 'registered_on' and 'expires_on' columns to datetime
+    df['registered_on'] = pd.to_datetime(df['registered_on'], errors='coerce', format='%Y-%m-%d %H:%M:%S')
+    df['expires_on'] = pd.to_datetime(df['expires_on'], errors='coerce', format='%Y-%m-%d %H:%M:%S')
+
+
+    df.to_excel(timflow_export_file, index=False)
+
+    # Update exported column
+    c.execute('UPDATE apv_coordinates SET exported = 1 WHERE exported = 0')
+    
+    # Call the timflow_auto_import function
+    timflow_auto_import(timflow_export_file)
 
 
     # National Parks Check
@@ -638,6 +717,63 @@ from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.chrome.service import Service as ChromeService
+
+
+
+
+def timflow_auto_import(timflow_export_file):
+    # Set the path to the ChromeDriver executable
+    chrome_driver_path = 'chromedriver.exe'
+
+    # Create a Service object with the path to ChromeDriver
+    service = ChromeService(chrome_driver_path)
+
+    # Create a new instance of the Chrome driver with the Service object
+    driver = webdriver.Chrome(service=service)
+    try:
+        # Open the mills.timflow.com website
+        driver.get('https://mills.timflow.com')
+
+        # Perform login
+        email_input = driver.find_element(By.NAME, 'email')
+        password_input = driver.find_element(By.NAME, 'password')
+        login_button = driver.find_element(By.XPATH, '//button[contains(text(), "Log in")]')
+
+        # Enter your credentials
+        email_input.send_keys('cristian.vacaru@schweighofer.ro')
+        password_input.send_keys('a12345678')
+
+        # Click the login button
+        login_button.click()
+
+        # Wait for a few seconds to ensure the pop-out element is fully loaded
+        time.sleep(5)
+        
+        # Navigate to the loading sites page
+        driver.get('https://mills.timflow.com/loading_sites')
+
+        # Click on the "Choose file" button
+        choose_file_button = driver.find_element(By.XPATH, '//input[@type="file" and @name="excel"]')
+
+        # Get the absolute path of the file
+        absolute_export_file = os.path.abspath(timflow_export_file)
+
+        # Provide the absolute file path using send_keys
+        choose_file_button.send_keys(absolute_export_file)
+
+        # Wait for the file to be uploaded (adjust the time.sleep value as needed)
+        time.sleep(2)
+
+        # Confirm the upload (you may need to inspect the website to find the correct element)
+        confirm_button = driver.find_element(By.XPATH, '/html/body/div[1]/div[2]/div[2]/div/form/div/div[2]/button')
+        confirm_button.click()
+
+    finally:
+        # Close the browser
+        driver.quit()
+
+
 
 def parse_date_from_filename(filename):
     date_str = os.path.splitext(filename)[0]  # Remove the file extension
@@ -856,26 +992,7 @@ def automate_website_login(output_file):
     # Click the "Save" button
     save_button.click()
     time.sleep(50)
-    
-     # Access the second website
-    second_website_url = 'https://apv-monitoring.streamlit.app/'
-    driver.get(second_website_url)
-
-    # Wait for the page to load
-    time.sleep(5)
-
-    # Find the input element and type 'secret'
-    secret_input = driver.find_element(By.XPATH, '//*[@id="root"]/div[1]/div[1]/div/div/div/section/div[1]/div[1]/div/div/div/div[1]/div')
-    secret_input.send_keys('secret')
-
-    # Press Enter after typing 'secret'
-    secret_input.send_keys(Keys.ENTER)
-
-    # Wait for 50 seconds
-    time.sleep(50)
-
-
-
+ 
 make_api_call()
 np_check()
 extract_codAviz()
