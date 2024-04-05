@@ -962,7 +962,7 @@ def automate_website_login(output_file):
 
     # Enter your login credentials
     username_field.send_keys('cristian.vacaru')
-    password_field.send_keys('Password6!')
+    password_field.send_keys('CrVa4056!@#')
 
     # Click the login button
     login_button.click()
