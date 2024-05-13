@@ -186,8 +186,13 @@ def make_api_call():
     export_date = datetime.now().strftime('%y%m%d')
     timflow_export_file = f'timflow_coord/{export_date}.xlsx'
 
-    c.execute('SELECT type, code, name, longitude, latitude, registered_on, expires_on FROM apv_coordinates')
+    c.execute('SELECT type, code, name, longitude, latitude, registered_on, expires_on FROM apv_coordinates WHERE exported = 0')
     result = c.fetchall()
+    
+    # If there are no new entries, exit the function
+    if not result:
+        print("No new entries to export.")
+        return
 
     # Create DataFrame without specifying dtype initially
     df = pd.DataFrame(result, columns=['type', 'code', 'name', 'longitude', 'latitude', 'registered_on', 'expires_on'])
