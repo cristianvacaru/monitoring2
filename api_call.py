@@ -169,8 +169,11 @@ def make_api_call():
                     registered_on = datetime.now().strftime('%Y-%m-%d 00:00:00')
                     expires_on = (datetime.now() + relativedelta(months=+5)).strftime('%Y-%m-%d 00:00:00')
 
-                    c.execute('INSERT INTO apv_coordinates (type, code, name, longitude, latitude, registered_on, expires_on, exported) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+                    # c.execute('INSERT INTO apv_coordinates (type, code, name, longitude, latitude, registered_on, expires_on, exported) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+                    #         ('APV', '', nr, ramp['lng'], ramp['lat'], registered_on, expires_on, 0))
+                    c.execute('INSERT INTO apv_coordinates (type, code, name, longitude, latitude, registered_on, expires_on, exported) VALUES (?, ?, ?, ROUND(?, 5), ROUND(?, 5), ?, ?, ?)',
                             ('APV', '', nr, ramp['lng'], ramp['lat'], registered_on, expires_on, 0))
+
                     unique_coordinates.add(coordinate)
 
     # Make a request to update emiteAvize in apv_data table based on response_cache.json
