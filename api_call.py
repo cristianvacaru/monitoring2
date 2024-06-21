@@ -1001,28 +1001,28 @@ def automate_website_login(output_file):
     save_button.click()
     time.sleep(50)
  
-# make_api_call()
-# np_check()
-# extract_codAviz()
-# fetch_aviz_data()
-# fetch_route_data()
-# np_aviz_check()
+make_api_call()
+np_check()
+extract_codAviz()
+fetch_aviz_data()
+fetch_route_data()
+np_aviz_check()
 
 
-# # Call the function to archive entries older than 2 months
-# archive_old_entries()
+# Call the function to archive entries older than 2 months
+archive_old_entries()
 
-# # Call the function to send unsent entries in an email and mark them as sent
-# send_unsent_entries_email()
+# Call the function to send unsent entries in an email and mark them as sent
+send_unsent_entries_email()
 
-# # Call the shrink_database function for your SQLite databases
-# shrink_database('mydatabase.db')
-# shrink_database('np_database.db')
+# Call the shrink_database function for your SQLite databases
+shrink_database('mydatabase.db')
+shrink_database('np_database.db')
 
 # Call the function with your desired commit message
 commit_message = 'auto_update'
 commit_and_push_to_github(commit_message)
 
-# prepare_import_file()
+prepare_import_file()
 
 
